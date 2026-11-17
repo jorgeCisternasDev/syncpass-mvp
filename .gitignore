@@ -1,0 +1,33 @@
+# Android / Gradle
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IDE
+.idea/
+
+# Firma y secretos
+*.jks
+*.keystore
+*.p12
+keystore.properties
+
+# Artefactos y medios (no son codigo)
+*.apk
+*.aab
+*.mp4
+*.webm
+*.mp3
+*.zip
+
+# Respaldos de fuente
+*.bak
+
+# Sistema
+Thumbs.db
+.DS_Store
