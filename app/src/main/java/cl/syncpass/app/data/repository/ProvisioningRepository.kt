@@ -50,8 +50,9 @@ class ProvisioningRepository(
                     usuarioUuid = uuid,
                     eventoId = eventoId,
                     nombre = participant.name,
-                    email = participant.email?.takeIf { it.isNotBlank() }
-                        ?: "participante+$uuid@syncpass.local"
+                    // El correo del participante no se envia: puede coincidir con
+                    // un usuario existente y bloquear el lote (409 EMAIL_EN_USO).
+                    email = null
                 )
             )
 

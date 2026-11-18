@@ -10,6 +10,7 @@ import cl.syncpass.app.data.remote.SincronizacionRequest
 import cl.syncpass.app.data.remote.SyncApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import org.json.JSONObject
 import retrofit2.HttpException
 import java.io.IOException
 
@@ -17,7 +18,11 @@ sealed interface SyncResult {
     data object NothingPending : SyncResult
     data class Success(val accepted: Int, val sent: Int) : SyncResult
     /** [retryable] decide si el worker reintenta (red/5xx) o falla de forma definitiva. */
-    data class Failure(val message: String, val retryable: Boolean = true) : SyncResult
+    data class Failure(
+        val message: String,
+        val retryable: Boolean = true,
+        val rejected: Int = 0
+    ) : SyncResult
 }
 
 /**
@@ -61,6 +66,25 @@ class SyncRepository(
         attendanceDao.observePendingSyncCount(),
         surveyDao.observePendingSyncCount()
     ) { attendance, surveys -> attendance + surveys }
+
+    /** Registros que el servidor rechazo y ya no se reintentan. */
+    fun observeRejectedCount(): Flow<Int> = combine(
+        attendanceDao.observeRejectedCount(),
+        surveyDao.observeRejectedCount()
+    ) { attendance, surveys -> attendance + surveys }
+
+    /** Primer motivo de rechazo, para mostrarlo en Ajustes. */
+    fun observeRejectionMessage(): Flow<String?> = combine(
+        attendanceDao.observeRejectionMessage(),
+        surveyDao.observeRejectionMessage()
+    ) { attendance, surveys -> attendance ?: surveys }
+
+    /** Borra los rechazados. Las encuestas se borran antes por la clave foranea. */
+    suspend fun discardRejected(): Int = database.withTransaction {
+        val surveys = surveyDao.deleteRejected()
+        val attendance = attendanceDao.deleteRejected()
+        surveys + attendance
+    }
 
     /**
      * Sincronizacion completa de lo pendiente: aprovisiona primero y despues
@@ -125,9 +149,17 @@ class SyncRepository(
                 sent = asistencias.size + encuestas.size
             )
         } catch (error: HttpException) {
+            val rechazados = if (error.code() == 400 || error.code() == 409) {
+                marcarRechazados(error, asistencias, encuestas)
+            } else 0
             SyncResult.Failure(
-                "El servidor respondio ${error.code()}. Los registros siguen pendientes.",
-                retryable = esReintentable(error.code())
+                if (rechazados > 0) {
+                    "El servidor rechazo $rechazados registro(s). Revisa el motivo y descartalos."
+                } else {
+                    "El servidor respondio ${error.code()}. Los registros siguen pendientes."
+                },
+                retryable = esReintentable(error.code()),
+                rejected = rechazados
             )
         } catch (error: IOException) {
             SyncResult.Failure("Sin conexion con el servidor. Los registros siguen pendientes.")
@@ -141,6 +173,62 @@ class SyncRepository(
 
     /** El worker llama a este alias desde la UI y desde WorkManager. */
     suspend fun sync(): SyncResult = syncCompleto()
+
+    /**
+     * Marca como rechazados solo los items que el servidor identifico en
+     * `data.errores[]`. Si no hay detalle, marca todo lo pendiente para evitar
+     * un reintento infinito.
+     */
+    private suspend fun marcarRechazados(
+        error: HttpException,
+        asistencias: List<AttendanceEntity>,
+        encuestas: List<SurveyEntity>
+    ): Int {
+        val cuerpo = runCatching { error.response()?.errorBody()?.string() }
+            .getOrNull()
+            .orEmpty()
+        val errores = runCatching {
+            JSONObject(cuerpo).getJSONObject("data").getJSONArray("errores")
+        }.getOrNull()
+
+        val asistenciaIds = linkedSetOf<Long>()
+        val encuestaIds = linkedSetOf<Long>()
+        var motivo = "El servidor rechazo el lote."
+
+        if (errores != null) {
+            for (i in 0 until errores.length()) {
+                val detalle = errores.optJSONObject(i) ?: continue
+                val indice = detalle.optInt("indice", -1)
+                val tipo = detalle.optString("tipo", "")
+                val mensaje = detalle.optString("mensaje", "").ifBlank { motivo }
+                motivo = mensaje
+                when (tipo) {
+                    "ASISTENCIA" -> if (indice in asistencias.indices) {
+                        asistenciaIds += asistencias[indice].id
+                    }
+
+                    "ENCUESTA" -> if (indice in encuestas.indices) {
+                        encuestaIds += encuestas[indice].id
+                    }
+                }
+            }
+        }
+
+        val total = asistencias.size + encuestas.size
+        if (asistenciaIds.isEmpty() && encuestaIds.isEmpty()) {
+            attendanceDao.markAllPendingRejected(motivo)
+            surveyDao.markAllPendingRejected(motivo)
+            return total
+        }
+
+        if (asistenciaIds.isNotEmpty()) {
+            attendanceDao.markRejected(asistenciaIds.toList(), motivo)
+        }
+        if (encuestaIds.isNotEmpty()) {
+            surveyDao.markRejected(encuestaIds.toList(), motivo)
+        }
+        return asistenciaIds.size + encuestaIds.size
+    }
 
     private fun esReintentable(code: Int): Boolean = code in 500..599
 }

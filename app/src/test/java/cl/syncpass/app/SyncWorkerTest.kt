@@ -22,7 +22,10 @@ import cl.syncpass.app.data.repository.CatalogoRepository
 import cl.syncpass.app.data.repository.ProvisioningRepository
 import cl.syncpass.app.data.repository.SyncRepository
 import cl.syncpass.app.sync.SyncWorker
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -33,6 +36,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import retrofit2.HttpException
+import retrofit2.Response
 import java.io.IOException
 
 @RunWith(RobolectricTestRunner::class)
@@ -144,6 +149,25 @@ class SyncWorkerTest {
         assertNotNull(evento)
         assertEquals(proyecto!!.id, evento!!.projectId)
         assertEquals(10L, evento.remoteProjectId)
+    }
+
+    @Test
+    fun w04WorkerCon409MarcaRechazadoYNoReintenta() = runBlocking {
+        crearPendiente()
+        syncApi.failure = HttpException(
+            Response.error<Any>(
+                409,
+                """{"success":false,"data":{"errores":[{"indice":0,"tipo":"ASISTENCIA","codigo":"EVENTO_NO_EXISTE","mensaje":"El evento no existe."}]},"message":"El lote no se aplico."}"""
+                    .toResponseBody("application/json".toMediaType())
+            )
+        )
+
+        val worker = TestListenableWorkerBuilder<SyncWorker>(app).build()
+        val result = worker.doWork()
+
+        assertTrue(result is ListenableWorker.Result.Failure)
+        assertEquals(0, database.attendanceDao().pendingForSync().size)
+        assertEquals(1, app.container.syncRepository.observeRejectedCount().first())
     }
 
     private suspend fun crearPendiente() {

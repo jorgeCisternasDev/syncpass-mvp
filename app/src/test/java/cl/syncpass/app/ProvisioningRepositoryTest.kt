@@ -14,6 +14,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -89,7 +90,7 @@ class ProvisioningRepositoryTest {
     }
 
     @Test
-    fun provisionaConEventoRemotoYEmailDeRespaldo() = runBlocking {
+    fun provisionaSinEnviarCorreoAunqueElParticipanteLoTenga() = runBlocking {
         val eventId = crearEvento(remoteId = 10)
         val participantId = database.participantDao().insert(
             ParticipantEntity(
@@ -98,7 +99,7 @@ class ProvisioningRepositoryTest {
                 name = "Participante Ficticio",
                 document = "22222222-2",
                 documentNormalized = "222222222",
-                email = "  ",
+                email = "asistente@syncpass.cl",
                 usuarioUuid = "11111111-1111-4111-8111-111111111111"
             )
         )
@@ -109,10 +110,7 @@ class ProvisioningRepositoryTest {
         assertEquals("11111111-1111-4111-8111-111111111111", request.usuarioUuid)
         assertEquals(10L, request.eventoId)
         assertEquals("Participante Ficticio", request.nombre)
-        assertEquals(
-            "participante+11111111-1111-4111-8111-111111111111@syncpass.local",
-            request.email
-        )
+        assertNull(request.email)
         assertTrue(database.participantDao().getById(participantId)!!.provisioned)
     }
 

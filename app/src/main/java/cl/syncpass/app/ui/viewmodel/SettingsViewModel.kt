@@ -42,6 +42,8 @@ data class SettingsUiState(
     val attendanceCount: Int = 0,
     val surveyCount: Int = 0,
     val pendingSyncCount: Int = 0,
+    val rejectedSyncCount: Int = 0,
+    val rejectionMessage: String? = null,
     val exporting: Boolean = false,
     val clearing: Boolean = false,
     val syncing: Boolean = false
@@ -71,8 +73,10 @@ class SettingsViewModel(
     val state: StateFlow<SettingsUiState> = combine(
         counts,
         actions,
-        syncRepository.observePendingCount().catch { emit(0) }
-    ) { data, current, pending ->
+        syncRepository.observePendingCount().catch { emit(0) },
+        syncRepository.observeRejectedCount().catch { emit(0) },
+        syncRepository.observeRejectionMessage().catch { emit(null) }
+    ) { data, current, pending, rejected, rejection ->
         SettingsUiState(
             loading = false,
             eventCount = data.events,
@@ -80,6 +84,8 @@ class SettingsViewModel(
             attendanceCount = data.attendance,
             surveyCount = data.surveys,
             pendingSyncCount = pending,
+            rejectedSyncCount = rejected,
+            rejectionMessage = rejection,
             exporting = current.exporting,
             clearing = current.clearing,
             syncing = current.syncing
@@ -122,6 +128,23 @@ class SettingsViewModel(
                 is SyncResult.Failure -> _messages.emit(result.message)
             }
             actions.update { it.copy(syncing = false) }
+        }
+    }
+
+    fun discardRejected() {
+        if (actions.value.syncing || actions.value.clearing) return
+        viewModelScope.launch {
+            val count = runCatching { syncRepository.discardRejected() }.getOrElse { error ->
+                _messages.emit(
+                    "No se pudieron descartar los rechazados: " +
+                        (error.message ?: "error desconocido")
+                )
+                return@launch
+            }
+            _messages.emit(
+                if (count > 0) "Se descartaron $count registros rechazados."
+                else "No hay registros rechazados."
+            )
         }
     }
 

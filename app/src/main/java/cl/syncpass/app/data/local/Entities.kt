@@ -133,7 +133,10 @@ data class AttendanceEntity(
     val latitude: Double? = null,
     val longitude: Double? = null,
     @ColumnInfo(defaultValue = "0")
-    val sincronizado: Boolean = false
+    val sincronizado: Boolean = false,
+    @ColumnInfo(defaultValue = "0")
+    val rechazado: Boolean = false,
+    val rechazoMotivo: String? = null
 )
 
 @Entity(
@@ -176,7 +179,10 @@ data class SurveyEntity(
     val comment: String = "",
     val submittedAt: Long = System.currentTimeMillis(),
     @ColumnInfo(defaultValue = "0")
-    val sincronizado: Boolean = false
+    val sincronizado: Boolean = false,
+    @ColumnInfo(defaultValue = "0")
+    val rechazado: Boolean = false,
+    val rechazoMotivo: String? = null
 )
 
 object AttendanceMethod {
