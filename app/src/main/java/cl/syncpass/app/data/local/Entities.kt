@@ -5,13 +5,24 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.util.UUID
 
-@Entity(tableName = "projects")
+@Entity(
+    tableName = "projects",
+    indices = [Index(value = ["remoteId"], unique = true)]
+)
 data class ProjectEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val description: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    /** Id del proyecto en la API; null si nacio en el dispositivo. */
+    val remoteId: Long? = null,
+    val areaTematica: String = "",
+    val unidadVecinal: String = "",
+    val fechaInicio: Long? = null,
+    val fechaTermino: Long? = null,
+    val estado: String = ""
 )
 
 @Entity(
@@ -24,7 +35,11 @@ data class ProjectEntity(
             onDelete = ForeignKey.SET_NULL
         )
     ],
-    indices = [Index("projectId"), Index("startAt")]
+    indices = [
+        Index("projectId"),
+        Index("startAt"),
+        Index(value = ["remoteId"], unique = true)
+    ]
 )
 data class EventEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -42,7 +57,15 @@ data class EventEntity(
     @ColumnInfo(defaultValue = "0")
     val surveyReleased: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    /** Id del evento en la API; null si nacio en el dispositivo. */
+    val remoteId: Long? = null,
+    /** Id del proyecto remoto al que pertenece el evento. */
+    val remoteProjectId: Long? = null,
+    val latitud: Double? = null,
+    val longitud: Double? = null,
+    @ColumnInfo(defaultValue = "0")
+    val radioMetros: Int = 0
 )
 
 @Entity(
@@ -58,7 +81,8 @@ data class EventEntity(
     indices = [
         Index("eventId"),
         Index(value = ["eventId", "code"], unique = true),
-        Index(value = ["eventId", "documentNormalized"], unique = true)
+        Index(value = ["eventId", "documentNormalized"], unique = true),
+        Index(value = ["usuarioUuid"], unique = true)
     ]
 )
 data class ParticipantEntity(
@@ -71,7 +95,15 @@ data class ParticipantEntity(
     val email: String? = null,
     val phone: String? = null,
     val isWalkIn: Boolean = false,
-    val registeredAt: Long = System.currentTimeMillis()
+    val registeredAt: Long = System.currentTimeMillis(),
+    /**
+     * Identidad del participante en la API. Se genera al crear la fila; las
+     * filas anteriores a la version 5 quedan en null hasta sincronizar.
+     */
+    val usuarioUuid: String? = UUID.randomUUID().toString(),
+    /** true solo cuando la API confirmo el alta (POST api/participantes). */
+    @ColumnInfo(defaultValue = "0")
+    val provisioned: Boolean = false
 )
 
 @Entity(

@@ -27,6 +27,11 @@ data class ParticipantStatusRow(
     val surveySubmittedAt: Long?
 )
 
+data class ProvisioningParticipantRow(
+    @Embedded val participant: ParticipantEntity,
+    val eventRemoteId: Long?
+)
+
 data class AttendanceRow(
     @Embedded val attendance: AttendanceEntity,
     val participantName: String,

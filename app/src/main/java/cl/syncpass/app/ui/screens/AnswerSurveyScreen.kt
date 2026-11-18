@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cl.syncpass.app.data.local.SurveyQuestionType
+import cl.syncpass.app.sync.SyncScheduler
 import cl.syncpass.app.ui.appViewModel
 import cl.syncpass.app.ui.components.ErrorBanner
 import cl.syncpass.app.ui.components.InfoBanner
@@ -58,7 +59,8 @@ fun AnswerSurveyScreen(
     val viewModel: AnswerSurveyViewModel = appViewModel(key = "answer-survey-$surveyId") { container ->
         AnswerSurveyViewModel(
             surveyId = surveyId,
-            customSurveyRepository = container.customSurveyRepository
+            customSurveyRepository = container.customSurveyRepository,
+            onLocalSave = { SyncScheduler.enqueueOneTime(container.appContext) }
         )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()

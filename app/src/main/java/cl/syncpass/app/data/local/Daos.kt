@@ -40,6 +40,9 @@ interface EventDao {
     @Query("SELECT * FROM events WHERE id = :eventId")
     suspend fun getById(eventId: Long): EventEntity?
 
+    @Query("SELECT * FROM events WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun findByRemoteId(remoteId: Long): EventEntity?
+
     @Query(
         """
         UPDATE events
@@ -82,6 +85,9 @@ interface ProjectDao {
 
     @Query("SELECT * FROM projects WHERE id = :projectId")
     suspend fun getById(projectId: Long): ProjectEntity?
+
+    @Query("SELECT * FROM projects WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun findByRemoteId(remoteId: Long): ProjectEntity?
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(project: ProjectEntity): Long
@@ -133,8 +139,25 @@ interface ParticipantDao {
     @Query("SELECT code FROM participants WHERE eventId = :eventId")
     suspend fun allCodes(eventId: Long): List<String>
 
+    @Query("SELECT * FROM participants WHERE id IN (:ids)")
+    suspend fun findByIds(ids: List<Long>): List<ParticipantEntity>
+
+    @Query(
+        """
+        SELECT p.*, e.remoteId AS eventRemoteId
+        FROM participants p
+        INNER JOIN events e ON e.id = p.eventId
+        WHERE p.provisioned = 0
+        ORDER BY p.id ASC
+        """
+    )
+    suspend fun pendingProvisioning(): List<ProvisioningParticipantRow>
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(participant: ParticipantEntity): Long
+
+    @Update
+    suspend fun update(participant: ParticipantEntity)
 
     @Delete
     suspend fun delete(participant: ParticipantEntity)
