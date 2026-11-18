@@ -29,7 +29,7 @@ android {
         versionName = "1.1.0"
 
         // Valor anterior: la app solo usaba Room local, sin API remota.
-        buildConfigField("String", "API_BASE_URL", "\"http://192.168.100.191:8080/\"")
+        buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.84:8080/\"")
         // Valor anterior: no existia conmutador de modo demo para el login remoto.
         buildConfigField("boolean", "MODO_DEMO", "true")
 
