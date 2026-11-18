@@ -199,6 +199,33 @@ fun SettingsScreen(onProjects: () -> Unit, onLogout: () -> Unit) {
                             text = "Pendientes por enviar: ${state.pendingSyncCount}",
                             style = MaterialTheme.typography.titleSmall
                         )
+                        if (state.rejectedSyncCount > 0) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Rechazados: ${state.rejectedSyncCount}",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            state.rejectionMessage?.let { motivo ->
+                                Text(
+                                    text = motivo,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = viewModel::discardRejected,
+                                enabled = !state.syncing,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(46.dp)
+                                    .testTag("discard_rejected"),
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Text("Descartar rechazados")
+                            }
+                        }
                         Spacer(Modifier.height(10.dp))
                         FilledTonalButton(
                             onClick = viewModel::syncNow,

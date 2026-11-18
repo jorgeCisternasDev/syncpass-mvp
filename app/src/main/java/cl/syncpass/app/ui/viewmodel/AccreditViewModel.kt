@@ -53,7 +53,8 @@ class AccreditViewModel(
     private val accreditationRepository: AccreditationRepository,
     private val locationProvider: LocationProvider,
     statsDao: StatsDao,
-    connectivityMonitor: ConnectivityMonitor
+    connectivityMonitor: ConnectivityMonitor,
+    private val onLocalSave: () -> Unit = {}
 ) : ViewModel() {
 
     private val _local = MutableStateFlow(AccreditLocalState(selectedEventId = initialEventId))
@@ -156,6 +157,7 @@ class AccreditViewModel(
                     latitude = latitude,
                     longitude = longitude
                 )
+                if (result is AccreditResult.Success) runCatching { onLocalSave() }
                 _local.update { it.copy(busy = false, feedback = result.toFeedback()) }
             } catch (error: Exception) {
                 _local.update {
@@ -189,6 +191,7 @@ class AccreditViewModel(
                     latitude = latitude,
                     longitude = longitude
                 )
+                if (result is AccreditResult.Success) runCatching { onLocalSave() }
                 _local.update { it.copy(busy = false, feedback = result.toFeedback()) }
             } catch (error: Exception) {
                 _local.update {

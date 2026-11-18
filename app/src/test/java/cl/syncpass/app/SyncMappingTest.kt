@@ -69,4 +69,41 @@ class SyncMappingTest {
             json.keySet()
         )
     }
+
+    @Test
+    fun provisionedUuidTravelsInAttendanceAndSurveyJson() {
+        val attendance = AttendanceEntity(
+            id = 7,
+            eventId = 2,
+            participantId = 9,
+            attendedAt = 1_700_000_000_000,
+            method = "QR"
+        ).toRemote(usuarioUuid = "11111111-1111-4111-8111-111111111111")
+
+        val survey = SurveyEntity(
+            id = 3,
+            attendanceId = 7,
+            eventId = 2,
+            participantId = 9,
+            satisfaction = 5,
+            usefulness = 4,
+            submittedAt = 1_700_000_100_000
+        ).toRemote(usuarioUuid = "11111111-1111-4111-8111-111111111111")
+
+        val attendanceJson = JsonParser.parseString(gson.toJson(attendance)).asJsonObject
+        val surveyJson = JsonParser.parseString(gson.toJson(survey)).asJsonObject
+
+        assertEquals(
+            setOf("eventoId", "usuarioId", "usuarioUuid", "timestamp", "validado"),
+            attendanceJson.keySet()
+        )
+        assertEquals(
+            "11111111-1111-4111-8111-111111111111",
+            attendanceJson.get("usuarioUuid").asString
+        )
+        assertEquals(
+            "11111111-1111-4111-8111-111111111111",
+            surveyJson.get("usuarioUuid").asString
+        )
+    }
 }

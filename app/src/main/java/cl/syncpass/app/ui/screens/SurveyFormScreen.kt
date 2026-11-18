@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cl.syncpass.app.sync.SyncScheduler
 import cl.syncpass.app.ui.appViewModel
 import cl.syncpass.app.ui.components.ErrorBanner
 import cl.syncpass.app.ui.components.InfoBanner
@@ -62,7 +63,8 @@ fun SurveyFormScreen(
     val viewModel: SurveyFormViewModel = appViewModel(key = "survey-$attendanceId") { container ->
         SurveyFormViewModel(
             attendanceId = attendanceId,
-            surveyRepository = container.surveyRepository
+            surveyRepository = container.surveyRepository,
+            onLocalSave = { SyncScheduler.enqueueOneTime(container.appContext) }
         )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()

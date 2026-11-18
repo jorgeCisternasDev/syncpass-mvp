@@ -26,7 +26,8 @@ data class SurveyFormUiState(
 
 class SurveyFormViewModel(
     private val attendanceId: Long,
-    private val surveyRepository: SurveyRepository
+    private val surveyRepository: SurveyRepository,
+    private val onLocalSave: () -> Unit = {}
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SurveyFormUiState())
@@ -92,8 +93,11 @@ class SurveyFormViewModel(
                 usefulness = current.usefulness,
                 comment = current.comment
             )) {
-                is SubmitSurveyResult.Success -> _state.update {
-                    it.copy(saving = false, saved = true)
+                is SubmitSurveyResult.Success -> {
+                    runCatching { onLocalSave() }
+                    _state.update {
+                        it.copy(saving = false, saved = true)
+                    }
                 }
 
                 is SubmitSurveyResult.Invalid -> _state.update {

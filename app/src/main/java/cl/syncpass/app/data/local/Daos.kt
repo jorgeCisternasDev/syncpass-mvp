@@ -40,6 +40,9 @@ interface EventDao {
     @Query("SELECT * FROM events WHERE id = :eventId")
     suspend fun getById(eventId: Long): EventEntity?
 
+    @Query("SELECT * FROM events WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun findByRemoteId(remoteId: Long): EventEntity?
+
     @Query(
         """
         UPDATE events
@@ -82,6 +85,9 @@ interface ProjectDao {
 
     @Query("SELECT * FROM projects WHERE id = :projectId")
     suspend fun getById(projectId: Long): ProjectEntity?
+
+    @Query("SELECT * FROM projects WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun findByRemoteId(remoteId: Long): ProjectEntity?
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(project: ProjectEntity): Long
@@ -133,8 +139,25 @@ interface ParticipantDao {
     @Query("SELECT code FROM participants WHERE eventId = :eventId")
     suspend fun allCodes(eventId: Long): List<String>
 
+    @Query("SELECT * FROM participants WHERE id IN (:ids)")
+    suspend fun findByIds(ids: List<Long>): List<ParticipantEntity>
+
+    @Query(
+        """
+        SELECT p.*, e.remoteId AS eventRemoteId
+        FROM participants p
+        INNER JOIN events e ON e.id = p.eventId
+        WHERE p.provisioned = 0
+        ORDER BY p.id ASC
+        """
+    )
+    suspend fun pendingProvisioning(): List<ProvisioningParticipantRow>
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(participant: ParticipantEntity): Long
+
+    @Update
+    suspend fun update(participant: ParticipantEntity)
 
     @Delete
     suspend fun delete(participant: ParticipantEntity)
@@ -165,13 +188,28 @@ interface AttendanceDao {
     @Query("SELECT COUNT(*) FROM attendance WHERE eventId = :eventId")
     suspend fun countByEvent(eventId: Long): Int
 
-    @Query("SELECT * FROM attendance WHERE sincronizado = 0 ORDER BY attendedAt ASC")
+    @Query("SELECT * FROM attendance WHERE sincronizado = 0 AND rechazado = 0 ORDER BY attendedAt ASC")
     suspend fun pendingForSync(): List<AttendanceEntity>
 
     @Query("UPDATE attendance SET sincronizado = 1 WHERE id IN (:ids)")
     suspend fun markSynced(ids: List<Long>)
 
-    @Query("SELECT COUNT(*) FROM attendance WHERE sincronizado = 0")
+    @Query("UPDATE attendance SET rechazado = 1, rechazoMotivo = :motivo WHERE id IN (:ids)")
+    suspend fun markRejected(ids: List<Long>, motivo: String)
+
+    @Query("UPDATE attendance SET rechazado = 1, rechazoMotivo = :motivo WHERE sincronizado = 0")
+    suspend fun markAllPendingRejected(motivo: String)
+
+    @Query("SELECT COUNT(*) FROM attendance WHERE rechazado = 1")
+    fun observeRejectedCount(): Flow<Int>
+
+    @Query("SELECT rechazoMotivo FROM attendance WHERE rechazado = 1 AND rechazoMotivo IS NOT NULL LIMIT 1")
+    fun observeRejectionMessage(): Flow<String?>
+
+    @Query("DELETE FROM attendance WHERE rechazado = 1")
+    suspend fun deleteRejected(): Int
+
+    @Query("SELECT COUNT(*) FROM attendance WHERE sincronizado = 0 AND rechazado = 0")
     fun observePendingSyncCount(): Flow<Int>
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
@@ -268,13 +306,28 @@ interface SurveyDao {
     @Query("SELECT COUNT(*) FROM surveys")
     fun observeTotalCount(): Flow<Int>
 
-    @Query("SELECT * FROM surveys WHERE sincronizado = 0 ORDER BY submittedAt ASC")
+    @Query("SELECT * FROM surveys WHERE sincronizado = 0 AND rechazado = 0 ORDER BY submittedAt ASC")
     suspend fun pendingForSync(): List<SurveyEntity>
 
     @Query("UPDATE surveys SET sincronizado = 1 WHERE id IN (:ids)")
     suspend fun markSynced(ids: List<Long>)
 
-    @Query("SELECT COUNT(*) FROM surveys WHERE sincronizado = 0")
+    @Query("UPDATE surveys SET rechazado = 1, rechazoMotivo = :motivo WHERE id IN (:ids)")
+    suspend fun markRejected(ids: List<Long>, motivo: String)
+
+    @Query("UPDATE surveys SET rechazado = 1, rechazoMotivo = :motivo WHERE sincronizado = 0")
+    suspend fun markAllPendingRejected(motivo: String)
+
+    @Query("SELECT COUNT(*) FROM surveys WHERE rechazado = 1")
+    fun observeRejectedCount(): Flow<Int>
+
+    @Query("SELECT rechazoMotivo FROM surveys WHERE rechazado = 1 AND rechazoMotivo IS NOT NULL LIMIT 1")
+    fun observeRejectionMessage(): Flow<String?>
+
+    @Query("DELETE FROM surveys WHERE rechazado = 1")
+    suspend fun deleteRejected(): Int
+
+    @Query("SELECT COUNT(*) FROM surveys WHERE sincronizado = 0 AND rechazado = 0")
     fun observePendingSyncCount(): Flow<Int>
 
     @Query(

@@ -35,4 +35,6 @@ class NetworkModule(
 
     val authApi: AuthApi = retrofit.create(AuthApi::class.java)
     val syncApi: SyncApi = retrofit.create(SyncApi::class.java)
+    val catalogoApi: CatalogoApi = retrofit.create(CatalogoApi::class.java)
+    val participanteApi: ParticipanteApi = retrofit.create(ParticipanteApi::class.java)
 }

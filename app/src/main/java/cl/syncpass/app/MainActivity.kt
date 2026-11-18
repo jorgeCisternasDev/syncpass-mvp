@@ -12,6 +12,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val container = (application as SyncPassApp).container
+        (application as SyncPassApp).configureBackgroundSync()
         setContent {
             SyncPassTheme {
                 SyncPassRoot(container = container)

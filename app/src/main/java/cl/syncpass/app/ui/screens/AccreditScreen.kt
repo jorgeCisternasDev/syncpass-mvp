@@ -83,6 +83,7 @@ import cl.syncpass.app.data.local.AttendanceRow
 import cl.syncpass.app.data.local.EventWithStats
 import cl.syncpass.app.domain.AccreditationRules
 import cl.syncpass.app.domain.AccreditationWindow
+import cl.syncpass.app.sync.SyncScheduler
 import cl.syncpass.app.ui.appViewModel
 import cl.syncpass.app.ui.components.EmptyState
 import cl.syncpass.app.ui.components.ErrorBanner
@@ -113,7 +114,8 @@ fun AccreditScreen(
             accreditationRepository = container.accreditationRepository,
             locationProvider = container.locationProvider,
             statsDao = container.statsDao,
-            connectivityMonitor = container.connectivityMonitor
+            connectivityMonitor = container.connectivityMonitor,
+            onLocalSave = { SyncScheduler.enqueueOneTime(container.appContext) }
         )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()

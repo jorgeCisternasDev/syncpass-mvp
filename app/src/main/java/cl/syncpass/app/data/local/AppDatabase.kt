@@ -19,7 +19,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SurveyResponseEntity::class,
         SurveyAnswerEntity::class
     ],
-    version = 4,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -156,6 +156,45 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE projects ADD COLUMN remoteId INTEGER")
+                db.execSQL("ALTER TABLE projects ADD COLUMN areaTematica TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE projects ADD COLUMN unidadVecinal TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE projects ADD COLUMN fechaInicio INTEGER")
+                db.execSQL("ALTER TABLE projects ADD COLUMN fechaTermino INTEGER")
+                db.execSQL("ALTER TABLE projects ADD COLUMN estado TEXT NOT NULL DEFAULT ''")
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_projects_remoteId ON projects(remoteId)"
+                )
+
+                db.execSQL("ALTER TABLE events ADD COLUMN remoteId INTEGER")
+                db.execSQL("ALTER TABLE events ADD COLUMN remoteProjectId INTEGER")
+                db.execSQL("ALTER TABLE events ADD COLUMN latitud REAL")
+                db.execSQL("ALTER TABLE events ADD COLUMN longitud REAL")
+                db.execSQL("ALTER TABLE events ADD COLUMN radioMetros INTEGER NOT NULL DEFAULT 0")
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_events_remoteId ON events(remoteId)"
+                )
+
+                db.execSQL("ALTER TABLE participants ADD COLUMN usuarioUuid TEXT")
+                db.execSQL("ALTER TABLE participants ADD COLUMN provisioned INTEGER NOT NULL DEFAULT 0")
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_participants_usuarioUuid " +
+                        "ON participants(usuarioUuid)"
+                )
+            }
+        }
+
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE attendance ADD COLUMN rechazado INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE attendance ADD COLUMN rechazoMotivo TEXT")
+                db.execSQL("ALTER TABLE surveys ADD COLUMN rechazado INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE surveys ADD COLUMN rechazoMotivo TEXT")
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -165,7 +204,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     NAME
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .build()
                     .also { instance = it }
             }

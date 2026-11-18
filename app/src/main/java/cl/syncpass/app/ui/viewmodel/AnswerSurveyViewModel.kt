@@ -28,7 +28,8 @@ data class AnswerSurveyUiState(
 
 class AnswerSurveyViewModel(
     private val surveyId: Long,
-    private val customSurveyRepository: CustomSurveyRepository
+    private val customSurveyRepository: CustomSurveyRepository,
+    private val onLocalSave: () -> Unit = {}
 ) : ViewModel() {
     private val _state = MutableStateFlow(AnswerSurveyUiState())
     val state: StateFlow<AnswerSurveyUiState> = _state
@@ -107,8 +108,11 @@ class AnswerSurveyViewModel(
                 respondentName = current.respondentName,
                 answers = answers
             )) {
-                is SubmitSurveyResponseResult.Success -> _state.update {
-                    it.copy(saving = false, saved = true)
+                is SubmitSurveyResponseResult.Success -> {
+                    runCatching { onLocalSave() }
+                    _state.update {
+                        it.copy(saving = false, saved = true)
+                    }
                 }
 
                 is SubmitSurveyResponseResult.Invalid -> _state.update {
