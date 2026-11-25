@@ -28,10 +28,10 @@ android {
         versionCode = 2
         versionName = "1.1.0"
 
-        // Valor anterior: la app solo usaba Room local, sin API remota.
-        buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.84:8080/\"")
-        // Valor anterior: no existia conmutador de modo demo para el login remoto.
-        buildConfigField("boolean", "MODO_DEMO", "true")
+        // API desplegada en Railway (HTTPS, Postgres persistente).
+        buildConfigField("String", "API_BASE_URL", "\"https://syncpass-production.up.railway.app/\"")
+        // Login remoto obligatorio: la demo debe persistir en el servidor.
+        buildConfigField("boolean", "MODO_DEMO", "false")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
