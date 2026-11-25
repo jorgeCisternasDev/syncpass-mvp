@@ -9,14 +9,13 @@ App archivada: `DSY1105\archivo\SyncPass-cl.duoc` (`cl.duoc.syncpass`)
 `app/build.gradle.kts`:
 
 ```kotlin
-buildConfigField("String", "API_BASE_URL", "\"http://192.168.100.191:8080/\"")
-buildConfigField("boolean", "MODO_DEMO", "true")
+buildConfigField("String", "API_BASE_URL", "\"https://syncpass-production.up.railway.app/\"")
+buildConfigField("boolean", "MODO_DEMO", "false")
 ```
 
-- `MODO_DEMO=true`: si la API no responde, el login usa `LocalAuth` (monitor/coordinador/benjamin, clave `1234`).
-  Si la API responde, el rol siempre sale del JWT.
+- `MODO_DEMO=false`: el login y la sincronización van siempre contra la API pública; si no responde, se muestra el error y se reintenta.
 - `INTERNET` declarado en `AndroidManifest.xml`.
-- `res/xml/network_security_config.xml` permite HTTP solo a `192.168.100.191`, `10.0.2.2` y `localhost`.
+- HTTPS no necesita una excepción en `network_security_config.xml`; la configuración HTTP solo queda para desarrollo local.
 
 ## Contrato remoto
 
@@ -83,9 +82,21 @@ Cobertura nueva:
 
 Compilacion: `.\gradlew.bat :app:assembleDebug` -> BUILD SUCCESSFUL.
 
+## Verificación en producción (2026-11-24)
+
+- APK release `SyncPass-1.1.0-online-release.apk` compilado con
+  `API_BASE_URL=https://syncpass-production.up.railway.app/` y `MODO_DEMO=false`.
+- `POST /api/auth/login` con `coordinador@syncpass.cl / Coord.2026` devolvió token.
+- `POST /api/sync/lote` con una asistencia y una encuesta devolvió `aceptados=2`.
+- `GET /api/dashboard/resumen` pasó de 0 a 1 asistencia y 1 encuesta.
+- El reenvío del mismo lote devolvió `duplicados=2` y no cambió los totales.
+- El panel web mostró los mismos totales; la base PostgreSQL sobrevivió a un reinicio del servicio.
+
 ## Pendiente para la prueba en emulador
 
-1. Levantar `syncpass-api` en `8080` con perfil `local` y `JWT_SECRET`.
+Para probar contra producción, usar la URL pública y omitir los pasos 1 y 2; el APK de entrega ya apunta ahí.
+
+1. Levantar `syncpass-api` en `8080` con perfil `local` y `JWT_SECRET` (solo para la prueba local).
 2. Arrancar el emulador, verificar red y que alcance `192.168.100.191:8080`.
 3. Instalar `app-debug.apk` y hacer login con `monitor@syncpass.cl / Monitor.2026`.
 4. Verificar que entra a la interfaz de Monitor (rol leido del JWT).

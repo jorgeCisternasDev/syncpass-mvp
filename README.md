@@ -11,16 +11,29 @@ Paquete `cl.syncpass.app`. Versión 1.1.0 (`versionCode 2`).
 - CameraX + ML Kit para QR
 - Gradle 9.6, JDK 21
 
+## Sistema en línea (entrega 2026-11-24)
+
+| Pieza | URL o repositorio |
+| --- | --- |
+| Panel + API | <https://syncpass-production.up.railway.app> |
+| Salud | <https://syncpass-production.up.railway.app/api/health> |
+| Backend | [syncpass-api](https://github.com/jorgeCisternasDev/syncpass-api) |
+| Web | [syncpass-web](https://github.com/jorgeCisternasDev/syncpass-web) |
+
+La base es PostgreSQL en Railway y el panel web consume la misma API. La app usa
+`MODO_DEMO=false` para que el login y la sincronización vayan siempre al servidor.
+
 ## Configuración de la API
 
 La URL se define en `app/build.gradle.kts`:
 
 ```kotlin
-buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.84:8080/\"")
-buildConfigField("boolean", "MODO_DEMO", "true")
+buildConfigField("String", "API_BASE_URL", "\"https://syncpass-production.up.railway.app/\"")
+buildConfigField("boolean", "MODO_DEMO", "false")
 ```
 
-`MODO_DEMO=true` permite el login local si la API no responde. Para una demo estricta contra la API, cambiar a `false` y recompilar.
+`MODO_DEMO=false` obliga a autenticar contra la API pública. Para trabajar sin internet,
+cambiar a `true` solo en una copia local y volver a `false` antes de generar el APK de entrega.
 
 ## Compilar e instalar
 

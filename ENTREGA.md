@@ -1,5 +1,9 @@
 # SyncPass 1.1.0 - actualización de Encuestas
 
+> **Entrega en línea (2026-11-24):** el APK que apunta a la API pública es
+> `SyncPass-1.1.0-online-release.apk`, con `API_BASE_URL=https://syncpass-production.up.railway.app/`
+> y `MODO_DEMO=false`. El resto de este documento describe la versión 1.1.0 y sus pruebas.
+
 Aplicación Android offline-first para eventos, acreditación y encuestas. Interfaz en español, Room local y sincronización opcional con la API SyncPass. Sin cuentas pagadas ni secretos embebidos.
 
 ## Entrega
@@ -73,12 +77,12 @@ Cobertura nueva:
 
 ## Limitaciones reales
 
-- **Encuestas locales**: no hay backend ni enlace público; las encuestas creadas se responden en el mismo dispositivo.
+- **Encuestas personalizadas locales**: se responden en el mismo dispositivo; las encuestas de satisfacción sí se sincronizan con la API pública.
 - No se pueden editar las preguntas de una encuesta ya creada; sí pausarla, reactivarla o eliminarla.
 - Los resultados de encuestas personalizadas no se mezclan con los indicadores de satisfacción del evento.
 - La sincronización cubre acreditaciones y encuestas de satisfacción. Las encuestas personalizadas siguen siendo locales.
-- El login y la sincronización requieren la API levantada; con `MODO_DEMO=true` el login local es respaldo si la API no responde.
-- Integración con la API validada por pruebas unitarias y compilación; falta la corrida end-to-end en emulador.
+- El login y la sincronización usan la API pública; `MODO_DEMO=false` en el APK de entrega.
+- El contrato app → API se verificó con un `POST /api/sync/lote` real (asistencia + encuesta) y el dashboard subió; falta la corrida visual completa en un teléfono o emulador.
 - Escaneo QR con cámara física no verificado; sí se verificó generación ZXing + decodificación ML Kit.
 - GPS/permiso de ubicación no probado manualmente.
 - APK **debug**, no release firmada para tienda.
