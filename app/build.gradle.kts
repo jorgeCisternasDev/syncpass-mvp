@@ -25,8 +25,8 @@ android {
         applicationId = "cl.syncpass.app"
         minSdk = 27
         targetSdk = 37
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.1.1"
 
         // API desplegada en Railway (HTTPS, Postgres persistente).
         buildConfigField("String", "API_BASE_URL", "\"https://syncpass-production.up.railway.app/\"")
