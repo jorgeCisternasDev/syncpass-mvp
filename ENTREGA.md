@@ -1,8 +1,9 @@
 # SyncPass 1.1.0 - actualización de Encuestas
 
 > **Entrega en línea (2026-11-24):** el APK que apunta a la API pública es
-> `SyncPass-1.1.0-online-release.apk`, con `API_BASE_URL=https://syncpass-production.up.railway.app/`
-> y `MODO_DEMO=false`. El resto de este documento describe la versión 1.1.0 y sus pruebas.
+> `SyncPass-1.1.1-online-release.apk`, con `API_BASE_URL=https://syncpass-production.up.railway.app/`,
+> `MODO_DEMO=false` y el botón **Ajustes → Actualizar catálogo**. El resto de este documento
+> describe la versión 1.1.0 y sus pruebas; la 1.1.1 agrega la actualización manual del catálogo.
 
 Aplicación Android offline-first para eventos, acreditación y encuestas. Interfaz en español, Room local y sincronización opcional con la API SyncPass. Sin cuentas pagadas ni secretos embebidos.
 

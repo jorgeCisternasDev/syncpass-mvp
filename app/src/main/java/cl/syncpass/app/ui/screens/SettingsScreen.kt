@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Workspaces
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -78,7 +79,8 @@ fun SettingsScreen(onProjects: () -> Unit, onLogout: () -> Unit) {
             statsDao = container.statsDao,
             exportRepository = container.exportRepository,
             database = container.database,
-            syncRepository = container.syncRepository
+            syncRepository = container.syncRepository,
+            catalogoRepository = container.catalogoRepository
         )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -247,6 +249,29 @@ fun SettingsScreen(onProjects: () -> Unit, onLogout: () -> Unit) {
                                 Icon(Icons.Rounded.CloudUpload, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text("Sincronizar")
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = viewModel::refreshCatalog,
+                            enabled = !state.refreshing && !state.syncing,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                                .testTag("settings_refresh_catalog"),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            if (state.refreshing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Actualizando catalogo...")
+                            } else {
+                                Icon(Icons.Rounded.Refresh, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Actualizar catalogo")
                             }
                         }
                     }

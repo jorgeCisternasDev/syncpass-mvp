@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.syncpass.app.data.local.AppDatabase
 import cl.syncpass.app.data.local.StatsDao
+import cl.syncpass.app.data.repository.CatalogoRepository
+import cl.syncpass.app.data.repository.CatalogoResult
 import cl.syncpass.app.data.repository.ExportRepository
 import cl.syncpass.app.data.repository.ExportResult
 import cl.syncpass.app.data.repository.SyncRepository
@@ -32,7 +34,8 @@ private data class DataCounts(
 private data class SettingsActions(
     val exporting: Boolean = false,
     val clearing: Boolean = false,
-    val syncing: Boolean = false
+    val syncing: Boolean = false,
+    val refreshing: Boolean = false
 )
 
 data class SettingsUiState(
@@ -46,14 +49,16 @@ data class SettingsUiState(
     val rejectionMessage: String? = null,
     val exporting: Boolean = false,
     val clearing: Boolean = false,
-    val syncing: Boolean = false
+    val syncing: Boolean = false,
+    val refreshing: Boolean = false
 )
 
 class SettingsViewModel(
     statsDao: StatsDao,
     private val exportRepository: ExportRepository,
     private val database: AppDatabase,
-    private val syncRepository: SyncRepository
+    private val syncRepository: SyncRepository,
+    private val catalogoRepository: CatalogoRepository
 ) : ViewModel() {
 
     private val actions = MutableStateFlow(SettingsActions())
@@ -88,7 +93,8 @@ class SettingsViewModel(
             rejectionMessage = rejection,
             exporting = current.exporting,
             clearing = current.clearing,
-            syncing = current.syncing
+            syncing = current.syncing,
+            refreshing = current.refreshing
         )
     }.stateIn(
         scope = viewModelScope,
@@ -128,6 +134,21 @@ class SettingsViewModel(
                 is SyncResult.Failure -> _messages.emit(result.message)
             }
             actions.update { it.copy(syncing = false) }
+        }
+    }
+
+    fun refreshCatalog() {
+        if (actions.value.refreshing) return
+        actions.update { it.copy(refreshing = true) }
+        viewModelScope.launch {
+            when (val result = catalogoRepository.refrescar()) {
+                is CatalogoResult.Success -> _messages.emit(
+                    "Catalogo actualizado: ${result.proyectos} proyectos y ${result.eventos} eventos."
+                )
+
+                is CatalogoResult.Failure -> _messages.emit(result.message)
+            }
+            actions.update { it.copy(refreshing = false) }
         }
     }
 

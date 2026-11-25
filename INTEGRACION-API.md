@@ -84,7 +84,7 @@ Compilacion: `.\gradlew.bat :app:assembleDebug` -> BUILD SUCCESSFUL.
 
 ## Verificación en producción (2026-11-24)
 
-- APK release `SyncPass-1.1.0-online-release.apk` compilado con
+- APK release `SyncPass-1.1.1-online-release.apk` compilado con
   `API_BASE_URL=https://syncpass-production.up.railway.app/` y `MODO_DEMO=false`.
 - `POST /api/auth/login` con `coordinador@syncpass.cl / Coord.2026` devolvió token.
 - `POST /api/sync/lote` con una asistencia y una encuesta devolvió `aceptados=2`.
